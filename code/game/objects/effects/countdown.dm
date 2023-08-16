@@ -166,3 +166,20 @@
 		return -1
 	var/time_left = max(0, (bud.finish_time - world.time) / 10)
 	return time_left
+
+/obj/effect/countdown/remnants_ruined
+	invisibility = 0
+	base_pixel_x = 16
+	pixel_x = 16
+	base_pixel_y = 40
+	pixel_y = 40
+	name = "remants of a ruined world countdown"
+	color = "#d60d2b"
+
+/obj/effect/countdown/remnants_ruined/get_value()
+	var/mob/living/simple_animal/hostile/abnormality/remnants_ruined/H = attached_to
+	if(!istype(H))
+		return
+	else
+		var/time_left = max(0, (H.finish_time - world.time) / 10)
+		return round(time_left)

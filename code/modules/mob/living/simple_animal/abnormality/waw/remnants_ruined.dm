@@ -19,9 +19,12 @@
 	light_color = COLOR_YELLOW
 	light_range = 5
 	light_power = 5
-	var/counting_down = FALSE
 	var/explosion_damage = 250 //Instantly insane even at maximum prudence if you aren't wearing any armor, yeowch.
 
+	var/time = 1 MINUTES //Should be enough for you to get a work in
+	var/timing_id
+	var/finish_time
+	var/obj/effect/countdown/remnants_ruined/countdown
 
 	var/list/normal_work_chances = list(
 						ABNORMALITY_WORK_INSTINCT = 0,
@@ -42,17 +45,27 @@
 		)
 	gift_type =  /datum/ego_gifts/executive
 
+
+/mob/living/simple_animal/hostile/abnormality/remnants_ruined/Initialize()
+	. = ..()
+	countdown = new(src)
+
+/mob/living/simple_animal/hostile/abnormality/remnants_ruined/Destroy()
+	QDEL_NULL(countdown)
+	. =..()
+
 //Fluff examine
 /mob/living/simple_animal/hostile/abnormality/remnants_ruined/examine(mob/user)
 	. = ..()
 	switch(datum_reference?.qliphoth_meter)
 		if(0)
-			//to_chat(user, "<span class='warning'>There are [get_time_left()] seconds until detonation </span>.")
+			to_chat(user, "It seems like it is armed to explode!")
 		if(1)
 			to_chat(user, "You feel like fiddling with it may be a bad idea.")
 
 //If qliph lowers, prime the bomb
 /mob/living/simple_animal/hostile/abnormality/remnants_ruined/proc/PrimeBomb()
+	say("Prime Bomb")
 	icon_state = "remnants_ruined_primed"
 	fear_level = WAW_LEVEL + 1 //ALEPH
 	work_damage_amount = 15 //5 more damage per tick
@@ -60,22 +73,34 @@
 
 //Lowers again, you're in for a bad time.
 /mob/living/simple_animal/hostile/abnormality/remnants_ruined/proc/ArmBomb()
-	Countdown()
+	say("Arm Bomb")
+	ToggleCountdown()
+	notify_ghosts("The remnants have been disturbed.", source = src, action = NOTIFY_ORBIT, header="Something Interesting!")
 	icon_state = "remnants_ruined_armed"
 	fear_level = WAW_LEVEL + 2 //ALEPH +1
 	work_damage_amount = 20 //10 more damage per tick
 
+/mob/living/simple_animal/hostile/abnormality/remnants_ruined/proc/ToggleCountdown()
+	say("Countdown")
+	if(!timing_id)
+		finish_time = world.time + time
+		timing_id = addtimer(CALLBACK(src, .proc/Explode), time, TIMER_STOPPABLE)
+		countdown.start()
+	else
+		ResetBomb()
+
 //resets everything that priming the bomb changes
 /mob/living/simple_animal/hostile/abnormality/remnants_ruined/proc/ResetBomb()
-	counting_down = FALSE
+	say("Reset Bomb")
 	datum_reference.qliphoth_change(2)
 	icon_state = "remnants_ruined"
 	work_damage_amount = 10
 	fear_level = WAW_LEVEL
 	work_chances = normal_work_chances.Copy()
-
-/mob/living/simple_animal/hostile/abnormality/remnants_ruined/proc/Countdown()
-	counting_down = TRUE
+	deltimer(timing_id)
+	timing_id = null
+	countdown.stop()
+	finish_time = null
 
 //taken from BS
 /mob/living/simple_animal/hostile/abnormality/remnants_ruined/proc/Explode()
@@ -107,11 +132,14 @@
 
 /mob/living/simple_animal/hostile/abnormality/remnants_ruined/OnQliphothChange(mob/living/carbon/human/user, amount = 1)
 	. = ..()
-	switch(datum_reference?.qliphoth_meter)
-		if(0)
-			ArmBomb()
-		if(1)
-			PrimeBomb()
+	if(datum_reference?.qliphoth_meter ==1)
+		PrimeBomb()
+
+/mob/living/simple_animal/hostile/abnormality/remnants_ruined/ZeroQliphoth(mob/living/carbon/human/user)
+	. = ..()
+	if(!timing_id)
+		ArmBomb()
+
 
 /mob/living/simple_animal/hostile/abnormality/remnants_ruined/AttemptWork(mob/living/carbon/human/user, work_type)
 	if(datum_reference?.qliphoth_meter != 2) //are we not inert?
@@ -119,7 +147,7 @@
 	return ..()
 
 /mob/living/simple_animal/hostile/abnormality/remnants_ruined/WorkChance(mob/living/carbon/human/user, chance, work_type)
-	if(datum_reference?.qliphoth_meter == 1) //are we primed?
+	if(datum_reference?.qliphoth_meter != 2) //are we primed or armed?
 		return chance - (get_attribute_level(user, TEMPERANCE_ATTRIBUTE)/5) //Negates temperance bonus entirely while primed
 
 /*
@@ -127,4 +155,6 @@ TODO:
 Countdown effects
 Countdown
 Sprites
+sound/machines/nuke/angry_beep.ogg
+playsound(loc, 'sound/items/timer.ogg', volume, FALSE)
 */
