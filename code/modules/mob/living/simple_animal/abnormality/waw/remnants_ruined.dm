@@ -15,28 +15,27 @@
 						ABNORMALITY_WORK_REPRESSION = 0
 						)
 	work_damage_amount = 10
-	work_damage_type = WHITE_DAMAGE	//Bomb are pretty scary.
+	work_damage_type = WHITE_DAMAGE	//Bombs are pretty scary.
 	light_color = COLOR_YELLOW
 	light_range = 5
 	light_power = 5
 	var/explosion_damage = 250 //Instantly insane even at maximum prudence if you aren't wearing any armor, yeowch.
 
 	var/time = 1 MINUTES //Should be enough for you to get a work in
-	var/timing_id
+	var/timing
 	var/finish_time
 	var/obj/effect/countdown/remnants_ruined/countdown
 
-	var/list/normal_work_chances = list(
-						ABNORMALITY_WORK_INSTINCT = 0,
+	var/list/modular_work_chances = list( //You can work anything on it!
+		"active" = list(ABNORMALITY_WORK_INSTINCT = 0,
 						ABNORMALITY_WORK_INSIGHT = 40,
 						ABNORMALITY_WORK_ATTACHMENT = 0,
-						ABNORMALITY_WORK_REPRESSION = 0
-						)
-	var/list/primed_work_chances =  list(
-						ABNORMALITY_WORK_INSTINCT = 60,
+						ABNORMALITY_WORK_REPRESSION = 0),
+
+		"inactive" = list(ABNORMALITY_WORK_INSTINCT = 60,
 						ABNORMALITY_WORK_INSIGHT = 60,
 						ABNORMALITY_WORK_ATTACHMENT = 60,
-						ABNORMALITY_WORK_REPRESSION = 60
+						ABNORMALITY_WORK_REPRESSION = 60)
 						)
 
 	ego_list = list(
@@ -59,17 +58,23 @@
 	. = ..()
 	switch(datum_reference?.qliphoth_meter)
 		if(0)
-			to_chat(user, "It seems like it is armed to explode!")
+			to_chat(user, "It is armed to explode!")
 		if(1)
 			to_chat(user, "You feel like fiddling with it may be a bad idea.")
 
+/mob/living/simple_animal/hostile/abnormality/remnants_ruined/Life()
+	. = ..()
+	if(timing)
+		playsound(loc, 'sound/items/timer.ogg', 50, FALSE)
+
 //If qliph lowers, prime the bomb
 /mob/living/simple_animal/hostile/abnormality/remnants_ruined/proc/PrimeBomb()
+	var/list/active_work_chances = modular_work_chances["active"]
 	say("Prime Bomb")
 	icon_state = "remnants_ruined_primed"
 	fear_level = WAW_LEVEL + 1 //ALEPH
 	work_damage_amount = 15 //5 more damage per tick
-	work_chances = primed_work_chances.Copy()
+	work_chances = active_work_chances.Copy()
 
 //Lowers again, you're in for a bad time.
 /mob/living/simple_animal/hostile/abnormality/remnants_ruined/proc/ArmBomb()
@@ -82,23 +87,24 @@
 
 /mob/living/simple_animal/hostile/abnormality/remnants_ruined/proc/ToggleCountdown()
 	say("Countdown")
-	if(!timing_id)
+	if(!timing)
 		finish_time = world.time + time
-		timing_id = addtimer(CALLBACK(src, .proc/Explode), time, TIMER_STOPPABLE)
+		timing = addtimer(CALLBACK(src, .proc/Explode), time, TIMER_STOPPABLE)
 		countdown.start()
 	else
 		ResetBomb()
 
 //resets everything that priming the bomb changes
 /mob/living/simple_animal/hostile/abnormality/remnants_ruined/proc/ResetBomb()
+	var/list/inactive_work_chances = modular_work_chances["inactive"]
 	say("Reset Bomb")
 	datum_reference.qliphoth_change(2)
 	icon_state = "remnants_ruined"
 	work_damage_amount = 10
 	fear_level = WAW_LEVEL
-	work_chances = normal_work_chances.Copy()
-	deltimer(timing_id)
-	timing_id = null
+	work_chances = inactive_work_chances.Copy()
+	deltimer(timing)
+	timing = null
 	countdown.stop()
 	finish_time = null
 
@@ -130,16 +136,20 @@
 		datum_reference.qliphoth_change(-1)
 	return
 
+/mob/living/simple_animal/hostile/abnormality/remnants_ruined/PostWorkEffect(mob/living/carbon/human/user, work_type, pe, work_time)
+	if((timing) && (!user.sanity_lost) && (datum_reference?.qliphoth_meter == 0))
+		ResetBomb()
+
 /mob/living/simple_animal/hostile/abnormality/remnants_ruined/OnQliphothChange(mob/living/carbon/human/user, amount = 1)
 	. = ..()
-	if(datum_reference?.qliphoth_meter ==1)
+	if(datum_reference?.qliphoth_meter == 1)
 		PrimeBomb()
 
 /mob/living/simple_animal/hostile/abnormality/remnants_ruined/ZeroQliphoth(mob/living/carbon/human/user)
 	. = ..()
-	if(!timing_id)
+	PrimeBomb()
+	if(!timing)
 		ArmBomb()
-
 
 /mob/living/simple_animal/hostile/abnormality/remnants_ruined/AttemptWork(mob/living/carbon/human/user, work_type)
 	if(datum_reference?.qliphoth_meter != 2) //are we not inert?
@@ -147,14 +157,17 @@
 	return ..()
 
 /mob/living/simple_animal/hostile/abnormality/remnants_ruined/WorkChance(mob/living/carbon/human/user, chance, work_type)
-	if(datum_reference?.qliphoth_meter != 2) //are we primed or armed?
-		return chance - (get_attribute_level(user, TEMPERANCE_ATTRIBUTE)/5) //Negates temperance bonus entirely while primed
+//	if(datum_reference?.qliphoth_meter != 2) //are we primed or armed?
+		return //chance - (get_attribute_level(user, TEMPERANCE_ATTRIBUTE)/5) //Negates temperance bonus entirely while primed or armed
 
 /*
 TODO:
-Countdown effects
-Countdown
+Align stuff
+sound effects
+polish
+see if workchances are working
 Sprites
+EGO
 sound/machines/nuke/angry_beep.ogg
 playsound(loc, 'sound/items/timer.ogg', volume, FALSE)
 */
