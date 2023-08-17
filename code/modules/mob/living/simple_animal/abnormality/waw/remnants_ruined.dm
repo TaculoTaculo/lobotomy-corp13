@@ -38,6 +38,7 @@
 						ABNORMALITY_WORK_REPRESSION = 60)
 						)
 
+
 	ego_list = list(
 		/datum/ego_datum/weapon/executive,
 		/datum/ego_datum/armor/executive
@@ -156,11 +157,11 @@
 		to_chat(user, "Tick... Tock...")
 	return ..()
 
-/mob/living/simple_animal/hostile/abnormality/remnants_ruined/WorkChance(mob/living/carbon/human/user, chance, work_type)
-//	if(datum_reference?.qliphoth_meter != 2) //are we primed or armed?
-		return //chance - (get_attribute_level(user, TEMPERANCE_ATTRIBUTE)/5) //Negates temperance bonus entirely while primed or armed
-
 /*
+/mob/living/simple_animal/hostile/abnormality/remnants_ruined/WorkChance(mob/living/carbon/human/user, chance, work_type)
+	if(datum_reference?.qliphoth_meter != 2) //are we primed or armed?
+		return chance - (get_attribute_level(user, TEMPERANCE_ATTRIBUTE)/5) //Negates temperance bonus entirely while primed or armed
+
 TODO:
 Align stuff
 sound effects

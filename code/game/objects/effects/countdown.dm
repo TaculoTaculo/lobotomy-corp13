@@ -169,9 +169,10 @@
 
 /obj/effect/countdown/remnants_ruined
 	invisibility = 0
-	base_pixel_x = 16
-	pixel_x = 16
-	base_pixel_y = 40
+	text_size = 1
+	base_pixel_x = 10
+	pixel_x = 13
+	base_pixel_y = 50
 	pixel_y = 40
 	name = "remants of a ruined world countdown"
 	color = "#d60d2b"
