@@ -64,13 +64,16 @@
 /obj/structure/golden_bough/Initialize()
 	..()
 	bough = new/obj/effect/golden_bough(src)
+
 	//Filter 1 gets applied to the bough
 	bough.filters += filter(type="ripple", x = 0, y = 11, size = 20, repeat = 6, radius = 0, falloff = 1)
 	f1 = bough.filters[bough.filters.len]
+
 	//Filter 2 gets applied to the pedestal
 	filters += filter(type="rays", x = 0, y = 11, size = 20, color = COLOR_VERY_SOFT_YELLOW, offset = 0.2, density = 10, factor = 0.4, threshold = 0.5)
 	f2 = filters[filters.len]
 	vis_contents += bough
+
 	FilterLoop(1) //Starts the filter's loop
 
 /obj/structure/golden_bough/Destroy()
@@ -110,12 +113,15 @@
 /obj/structure/golden_bough/proc/RoundEndEffect(mob/living/carbon/human/user)
 	bastards += user.ckey
 	if(do_after(user, 45 SECONDS))
+		//Visual Stuff
 		clear_filters()
 		bough.clear_filters()
 		vis_contents.Cut()
 		qdel(bough)
 		light_on = FALSE
 		update_light()
+
+		//Round End Effects
 		SSticker.SetRoundEndSound('sound/abnormalities/donttouch/end.ogg')
 		SSticker.force_ending = 1
 		for(var/mob/M in GLOB.player_list)
