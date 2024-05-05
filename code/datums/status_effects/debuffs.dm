@@ -1133,7 +1133,7 @@
 /datum/status_effect/stacking/lc_burn/proc/Check_Resist(mob/living/owner)
 	//I was hesistant to put a new var for this check in suit.dm, so I just check for each armor instead
 	var/mob/living/carbon/human/H = owner
-	var/obj/item/clothing/suit/armor/ego_gear/aleph/combust/C = H.get_item_by_slot(ITEM_SLOT_OCLOTHING)
+	var/obj/item/clothing/suit/armor/ego_gear/aleph/waxen/C = H.get_item_by_slot(ITEM_SLOT_OCLOTHING)
 	var/obj/item/clothing/suit/armor/ego_gear/realization/desperation/D = H.get_item_by_slot(ITEM_SLOT_OCLOTHING)
 	if(istype(C))
 		burn_res = 15
@@ -1191,3 +1191,27 @@
 	L.adjust_attribute_buff(TEMPERANCE_ATTRIBUTE, 25)
 	L.adjust_attribute_buff(JUSTICE_ATTRIBUTE, 25)
 	return ..()
+
+/datum/status_effect/stacking/pallid_noise
+	id = "pallidnoise"
+	status_type = STATUS_EFFECT_MULTIPLE
+	duration = 15 SECONDS//15 seconds per stack, a bit over a minute when maxed out
+	tick_interval = 10
+	max_stacks = 5
+	stacks = 1
+	on_remove_on_mob_delete = TRUE
+	alert_type = /atom/movable/screen/alert/status_effect/pallid_noise
+	consumed_on_threshold = FALSE
+
+/atom/movable/screen/alert/status_effect/pallid_noise
+	name = "Pallid Noise"
+	desc = "Hideous noises reverberate through your own head, all speaking a language you don't understand, yet do."
+	icon = 'ModularTegustation/Teguicons/status_sprites.dmi'
+	icon_state = "pallid_noise"
+
+/datum/status_effect/stacking/pallid_noise/tick()//TODO:change this to golden apple's life tick for less lag
+	if(!ishuman(owner))
+		owner.apply_damage(stacks * 5, WHITE_DAMAGE, null, owner.run_armor_check(null, WHITE_DAMAGE))
+		return
+	var/mob/living/carbon/human/status_holder = owner
+	status_holder.adjustSanityLoss(stacks * stacks)//sanity damage is the # of stacks squared
